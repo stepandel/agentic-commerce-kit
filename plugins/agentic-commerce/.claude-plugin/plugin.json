@@ -1,0 +1,13 @@
+{
+  "name": "agentic-commerce",
+  "displayName": "Agentic Commerce",
+  "version": "0.1.0",
+  "description": "Add agentic shopping to an existing store: MPP checkout over Stripe Shared Payment Tokens plus the agent discovery layer (llms.txt, agent-storefront manifest, OpenAPI).",
+  "author": {
+    "name": "Stepan Arsentjev",
+    "email": "stepan.arsentjev@gmail.com"
+  },
+  "repository": "https://github.com/stepandel/agentic-commerce-kit",
+  "license": "MIT",
+  "keywords": ["agentic-commerce", "stripe", "mpp", "shared-payment-token", "checkout", "ai-agents"]
+}
