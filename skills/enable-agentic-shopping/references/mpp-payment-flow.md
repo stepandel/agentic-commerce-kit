@@ -5,8 +5,11 @@ Required` using the ["Payment" HTTP Authentication scheme]. An agent reads the
 challenge, mints a credential (here: a Stripe **Shared Payment Token**), and
 retries the *identical* request with `Authorization: Payment <credential>`.
 
-The `mppx` SDK (`mppx`, `mppx/server`) implements both sides. This skill uses the
-server side only.
+The flow below is **language-neutral** — it's the MPP wire protocol. The code samples
+use the TypeScript `mppx` SDK (`mppx`, `mppx/server`) as the reference implementation;
+the same flow is available in the Python/Rust/Ruby/Go SDKs or over raw HTTP. See
+`sdks-and-languages.md` for per-language packages and the raw-HTTP contract. This
+skill uses the server side only.
 
 ## The lifecycle
 

@@ -1,4 +1,9 @@
-# Framework adapters
+# Framework adapters (JS/TS)
+
+These adapters are for **JavaScript/TypeScript** stores using the bundled templates.
+For Python/Rust/Ruby/Go, use that SDK's own framework middleware (e.g. FastAPI/Flask,
+axum/actix, Rails/Sinatra, net/http/Gin) — see `sdks-and-languages.md` — and mount
+the same three endpoints + discovery routes.
 
 The MPP core (`templates/mpp-core.ts`) and discovery (`templates/discovery.ts`)
 speak the web-standard `Request → Response` API. `createMppHandlers(hooks)` returns

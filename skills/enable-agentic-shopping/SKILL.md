@@ -10,9 +10,18 @@ Turn an existing store into one that AI agents can shop: discover products, get 
 quote, pay with a Stripe Shared Payment Token over the Machine Payments Protocol
 (MPP), and receive fulfillment — all without a human browser checkout.
 
-This skill is **framework-agnostic** and **Stripe-SPT-only** for now. The payment
-core is built on the web-standard `Request`/`Response` API (the `mppx` SDK), so it
-mounts on Next.js, Hono, Bun, Deno, Express, or any runtime via a thin adapter.
+This skill is **Stripe-SPT-only** for now, and works against any store regardless of
+language. MPP is an HTTP-native protocol (`402` + `WWW-Authenticate: Payment` /
+`Authorization: Payment` / `Payment-Receipt`) with official SDKs in **TypeScript,
+Python, Rust, Go, and Ruby**, so the same flow can be implemented in any of them — or
+directly over raw HTTP where no SDK fits.
+
+The bundled `templates/` are **TypeScript** (the deepest, proven path, built on the
+`mppx` SDK and web-standard `Request`/`Response`, mounting on Next.js, Hono, Bun,
+Deno, Express, etc.). For a non-JS store, use that language's official MPP SDK
+following the identical protocol — see `references/sdks-and-languages.md`. One sharp
+edge: **the Go SDK does not support Stripe yet**, so a Go store is a hard fork
+(Step 3).
 
 ## What gets added to the store
 
@@ -47,12 +56,16 @@ see progress.
 ### Step 1 — Locate and profile the target store
 
 1. Resolve the target store path (the skill argument, else ask the user).
-2. Detect the stack so you know which adapter to use and where routes live:
-   - Read `package.json` (framework, scripts, package manager via lockfile:
-     `bun.lock`→bun, `pnpm-lock.yaml`→pnpm, `yarn.lock`→yarn, else npm).
-   - Identify the framework: Next.js (`next`), Hono, Express, Fastify, Nitro/Nuxt,
-     SvelteKit, Remix, or a bare Node/Bun/Deno server. Note the routing convention.
-   - Find where HTTP routes/handlers are defined and how env is loaded.
+2. Detect the **language/runtime first**, then the framework, so you know which MPP
+   SDK and adapter to use and where routes live:
+   - Language: look for `package.json` (JS/TS), `pyproject.toml`/`requirements.txt`
+     (Python), `go.mod` (Go), `Cargo.toml` (Rust), `Gemfile` (Ruby). Map it to the
+     official SDK in `references/sdks-and-languages.md`.
+   - JS/TS: package manager via lockfile (`bun.lock`→bun, `pnpm-lock.yaml`→pnpm,
+     `yarn.lock`→yarn, else npm); framework (Next.js, Hono, Express, Fastify, Nuxt,
+     SvelteKit, Remix, or a bare Node/Bun/Deno server). Other languages: identify the
+     web framework (FastAPI/Flask/Django, net/http/Gin, axum/actix, Rails/Sinatra).
+   - Find where HTTP routes/handlers are defined and how env/secrets are loaded.
    - Find the existing product catalog and any existing (human) checkout, so the
      agent endpoints can reuse pricing and coexist with browser checkout.
 3. Summarize findings to the user in 3–5 lines before changing anything.
@@ -86,32 +99,42 @@ with test credentials toward a production setup.
 
 Use `AskUserQuestion`. These decisions change the generated code; do not assume them:
 
-1. **Catalog source** — single product, a fixed list, or read from the store's
+1. **Language & MPP SDK** — confirm the store's language and the implementation path:
+   its official MPP SDK (`mppx` for JS/TS, `pympp` for Python, `mpp` crate for Rust,
+   `mpp-rb` for Ruby, `mpp-go` for Go), or raw HTTP if none fits. The bundled
+   templates cover JS/TS directly; other languages reuse the SAME protocol via their
+   SDK. **Go + Stripe is a hard fork** — Stripe SPT is not in the Go SDK yet, so a Go
+   store must either implement the Stripe charge over raw HTTP or front checkout with
+   a small JS/TS service. Surface this and let the user choose.
+2. **Catalog source** — single product, a fixed list, or read from the store's
    existing catalog/DB? Determines `catalog`/`parse` in the hooks.
-2. **Pricing / quote** — fixed price, computed (qty × unit, tiers, duration), or
+3. **Pricing / quote** — fixed price, computed (qty × unit, tiers, duration), or
    reuse the store's existing pricing function? Determines `quote`.
-3. **Fulfillment** — what "delivery" means after payment: grant access / issue a
+4. **Fulfillment** — what "delivery" means after payment: grant access / issue a
    license or token / create a DB order / call an existing fulfillment service /
    provision a resource. Determines `fulfill`. This is the most store-specific fork.
-4. **Order persistence & idempotency store** — where orders live so a `request_id`
+5. **Order persistence & idempotency store** — where orders live so a `request_id`
    replay resolves to the same order (existing DB, Redis/KV, or a simple table).
    Agentic checkout REQUIRES idempotent replay; pick a durable store for production.
-5. **Mount path & framework adapter** — confirm the route base path and which
-   adapter from `references/framework-adapters.md` to use.
-6. **Coexistence** — keep the human/browser checkout untouched (default) and add the
+6. **Mount path & framework adapter** — confirm the route base path and which
+   adapter to use (`references/framework-adapters.md` for JS; the SDK's framework
+   middleware for other languages, per `references/sdks-and-languages.md`).
+7. **Coexistence** — keep the human/browser checkout untouched (default) and add the
    agent endpoints alongside it. Confirm there is no path collision.
-7. **Deploy target & env** — where prod env vars are set (Vercel, Fly, Railway,
+8. **Deploy target & env** — where prod env vars are set (Vercel, Fly, Railway,
    container, etc.), so the handoff in Step 6 is accurate.
 
 Record the answers; they drive Step 4–5.
 
 ### Step 4 — Install dependencies and code
 
+**JS/TS stores** (the bundled templates apply directly):
+
 1. Install deps with the detected package manager: `mppx` and `stripe`.
 2. Copy the templates into the store, adapting names to its conventions:
    - `templates/config.ts` → loads + guards Stripe/MPP env (the prereqs in code).
-   - `templates/mpp-core.ts` → the framework-agnostic MPP composer + 402 handling +
-     order-digest replay binding + the generic validate/create/status handlers.
+   - `templates/mpp-core.ts` → the MPP composer + 402 handling + order-digest replay
+     binding + the generic validate/create/status handlers.
    - `templates/store-hooks.ts` → **fill from the Step 3 answers**: `parse`, `quote`,
      `fulfill`, `findOrder`/`createOrder`, `catalog`. This is where store logic lives.
    - `templates/discovery.ts` → fill the `storefront` descriptor (name, products,
@@ -119,6 +142,16 @@ Record the answers; they drive Step 4–5.
    - Mount handlers using the adapter snippet for the detected framework.
    - Merge `templates/env.example` into the store's `.env.example` (never overwrite
      real secrets; only add missing keys).
+
+**Non-JS stores** (Python/Rust/Ruby/Go): install the language's MPP SDK from
+`references/sdks-and-languages.md`, then build the same three endpoints + discovery
+using the SDK's typed Challenge/Credential/Receipt primitives. Use the TS templates
+as the behavioral spec — replicate the same logic: idempotent `order_id` derived from
+`request_id`, the order-digest replay binding, the "rejected vs no credential"
+distinction, fulfill only on a settled receipt, and the same discovery JSON. Keep the
+same prerequisite guards (live Stripe key + profile, `MPP_SECRET_KEY`). The discovery
+documents are language-independent JSON/text — port `discovery.ts` verbatim in shape.
+
 3. Keep edits additive. Do not modify existing checkout logic beyond what's needed
    to share catalog/pricing.
 
@@ -140,7 +173,7 @@ Record the answers; they drive Step 4–5.
 
 Tell the user:
 - Which files were added/changed and what each does.
-- The env vars to set in their deploy target (from Step 3.7), and that test Stripe
+- The env vars to set in their deploy target (from Step 3.8), and that test Stripe
   keys must be swapped for live before agents can pay for real.
 - How to test the paid leg end-to-end with the Stripe Link CLI (see
   `references/mpp-payment-flow.md`).
@@ -150,11 +183,15 @@ Tell the user:
 
 ## Bundled resources
 
-- `references/mpp-payment-flow.md` — the 402/SPT protocol, the `mppx` server API,
-  replay binding, the "rejected vs no credential" distinction, and curl test recipes.
+- `references/sdks-and-languages.md` — the official MPP SDKs per language (package
+  names, Stripe SPT support, the Go-Stripe gap) and the raw-HTTP wire contract for
+  languages without an SDK. Read this first when the store isn't JS/TS.
+- `references/mpp-payment-flow.md` — the 402/SPT protocol (language-neutral), the
+  `mppx` server API as the TS reference, replay binding, the "rejected vs no
+  credential" distinction, and curl test recipes.
 - `references/stripe-prerequisites.md` — how to obtain and validate the live key,
   the SPT profile, and the MPP secret; production guardrails.
-- `references/framework-adapters.md` — mounting the web-standard handlers on
-  Next.js / Hono / Bun / Deno / Express / Fastify.
-- `templates/` — the code copied into the store (see Step 4).
+- `references/framework-adapters.md` — JS/TS adapters (Next.js / Hono / Bun / Deno /
+  Express / Fastify). For other languages, use the SDK's framework middleware.
+- `templates/` — the TS code copied into JS/TS stores (see Step 4).
 - `scripts/preflight.sh` — prerequisite checks; safe to run read-only.

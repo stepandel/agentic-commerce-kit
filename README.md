@@ -69,7 +69,9 @@ agentic-commerce-kit/
   over Stripe Shared Payment Tokens plus the agent discovery layer (`llms.txt`,
   `agent-storefront.json`, `openapi.json`), writes the code into the target store,
   and confirms the `402` payment flow works — pausing for the user at every
-  store-specific fork. Framework-agnostic; Stripe-SPT-only for now.
+  store-specific fork. Works against any store language — MPP is HTTP-native with
+  official SDKs in TypeScript, Python, Rust, Go, and Ruby (bundled templates are
+  TypeScript; other languages use their SDK). Stripe-SPT-only for now.
 
 ## Local development
 
