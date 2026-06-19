@@ -106,11 +106,8 @@ return payment.withReceipt(Response.json(orderBody, { status: 202 }));
 ```
 
 Gotchas:
-- `amount` is a **decimal string in major units** (`"3.99"` = $3.99), not cents. The
-  `stripe/charge` request schema converts it to minor units once via
-  `parseUnits(amount, decimals)` (`decimals` = the currency's exponent, 2 for USD).
-  So passing cents like `"399"` is read as 399 *whole units* → `parseUnits("399", 2)`
-  = 39900 minor = **$399.00**, a 100× overcharge. Pass `(amountCents / 100).toFixed(2)`.
+- `amount` is **major units** (`"3.99"`), unlike Stripe's native API which uses cents.
+  Passing cents (`"399"`) overcharges 100× ($399). Use `(amountCents/100).toFixed(2)`.
 - Only `payment.status === 200` means settled. Never fulfill on any other status.
 - `Errors.PaymentError` from `mppx` → return `error.toProblemDetails()` with
   `error.status`, never a 500. No fulfillment on payment failure.
