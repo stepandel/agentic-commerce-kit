@@ -12,6 +12,21 @@ universal installer and a Claude Code plugin.
 
 ## Install
 
+### Quickest: paste this to your agent
+
+Paste this prompt into any coding agent (Claude Code, Codex, Cursor, …) and let it
+do the install:
+
+```
+Clone https://github.com/stepandel/agentic-commerce-kit into a permanent location
+(e.g. ~/.agentic-commerce-kit; pull latest if it already exists), then run its
+./setup script to install the skills into the AI agents on this machine. Run
+`./setup --list` first and show me what it detected, then run `./setup`. Confirm the
+enable-agentic-shopping skill is installed and tell me how to invoke it.
+```
+
+### Manual
+
 Clone the repo and run the installer. It auto-detects which agents you have and
 symlinks the skills into each one's skills directory:
 
