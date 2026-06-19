@@ -1,0 +1,111 @@
+#!/usr/bin/env bash
+# setup — install agentic-commerce-kit skills into your AI coding agents.
+#
+# Host-agnostic: skills are plain SKILL.md folders. This installer symlinks (or
+# copies) them into each detected agent's skills directory. Re-run after `git pull`.
+#
+#   ./setup                      install detected hosts (auto-detect)
+#   ./setup --host codex         install only for one host
+#   ./setup --all                install for every known host (create dirs as needed)
+#   ./setup --copy               copy files instead of symlinking (Windows / no symlink)
+#   ./setup --uninstall          remove this kit's skills from target hosts
+#   ./setup --list               list known hosts and whether each is detected
+#   ./setup -h | --help
+#
+# Add support for another agent: see docs/ADDING_A_HOST.md (one line below).
+
+set -euo pipefail
+
+REPO_DIR="$(cd "$(dirname "$0")" && pwd)"
+SKILLS_DIR="$REPO_DIR/skills"
+
+# --- Host registry --------------------------------------------------------
+# To add a host: add its name to KNOWN_HOSTS and a case in host_skills_dir().
+KNOWN_HOSTS="claude codex cursor opencode factory"
+
+host_skills_dir() {
+  case "$1" in
+    claude)   echo "$HOME/.claude/skills" ;;
+    codex)    echo "$HOME/.codex/skills" ;;
+    cursor)   echo "$HOME/.cursor/skills" ;;
+    opencode) echo "${XDG_CONFIG_HOME:-$HOME/.config}/opencode/skills" ;;
+    factory)  echo "$HOME/.factory/skills" ;;
+    *)        return 1 ;;
+  esac
+}
+
+# A host is "detected" if its base config dir already exists.
+host_detected() {
+  case "$1" in
+    claude)   [ -d "$HOME/.claude" ] ;;
+    codex)    [ -d "$HOME/.codex" ] ;;
+    cursor)   [ -d "$HOME/.cursor" ] ;;
+    opencode) [ -d "${XDG_CONFIG_HOME:-$HOME/.config}/opencode" ] ;;
+    factory)  [ -d "$HOME/.factory" ] ;;
+    *)        return 1 ;;
+  esac
+}
+
+# --- Options --------------------------------------------------------------
+MODE="install"; ONLY_HOST=""; USE_COPY=0; ALL=0
+while [ $# -gt 0 ]; do
+  case "$1" in
+    --host) ONLY_HOST="${2:-}"; shift 2 ;;
+    --all) ALL=1; shift ;;
+    --copy) USE_COPY=1; shift ;;
+    --uninstall) MODE="uninstall"; shift ;;
+    --list) MODE="list"; shift ;;
+    -h|--help) sed -n '2,21p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
+    *) echo "Unknown option: $1" >&2; exit 2 ;;
+  esac
+done
+
+skills() { find "$SKILLS_DIR" -mindepth 1 -maxdepth 1 -type d -exec basename {} \; ; }
+
+if [ "$MODE" = "list" ]; then
+  echo "Known hosts:"
+  for h in $KNOWN_HOSTS; do
+    if host_detected "$h"; then echo "  [detected] $h -> $(host_skills_dir "$h")"
+    else echo "  [ missing] $h -> $(host_skills_dir "$h")"; fi
+  done
+  echo; echo "Skills in this kit:"; for s in $(skills); do echo "  - $s"; done
+  exit 0
+fi
+
+# Which hosts to act on.
+TARGETS=""
+if [ -n "$ONLY_HOST" ]; then
+  host_skills_dir "$ONLY_HOST" >/dev/null 2>&1 || { echo "Unknown host: $ONLY_HOST" >&2; exit 2; }
+  TARGETS="$ONLY_HOST"
+else
+  for h in $KNOWN_HOSTS; do
+    if [ "$ALL" = "1" ] || host_detected "$h"; then TARGETS="$TARGETS $h"; fi
+  done
+fi
+[ -n "$(echo "$TARGETS" | tr -d ' ')" ] || { echo "No target hosts (none detected). Use --host <name> or --all."; exit 1; }
+
+install_one() { # host skill
+  local dest_dir; dest_dir="$(host_skills_dir "$1")"; local src="$SKILLS_DIR/$2"; local dest="$dest_dir/$2"
+  mkdir -p "$dest_dir"
+  if [ -e "$dest" ] && [ ! -L "$dest" ]; then
+    echo "    skip $2 (a real dir/file already exists at $dest — remove it to reinstall)"; return
+  fi
+  rm -f "$dest"
+  if [ "$USE_COPY" = "1" ]; then cp -R "$src" "$dest"; echo "    copied  $2 -> $dest"
+  else ln -s "$src" "$dest"; echo "    linked  $2 -> $dest"; fi
+}
+
+uninstall_one() { # host skill
+  local dest; dest="$(host_skills_dir "$1")/$2"
+  if [ -L "$dest" ]; then rm -f "$dest"; echo "    removed $2 ($dest)"
+  elif [ -e "$dest" ]; then echo "    skip $2 (not a symlink — left in place: $dest)"
+  fi
+}
+
+for h in $TARGETS; do
+  echo "$MODE: $h ($(host_skills_dir "$h"))"
+  for s in $(skills); do
+    if [ "$MODE" = "uninstall" ]; then uninstall_one "$h" "$s"; else install_one "$h" "$s"; fi
+  done
+done
+echo "Done."

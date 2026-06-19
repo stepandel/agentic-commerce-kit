@@ -61,11 +61,12 @@ see progress.
 ### Step 2 — Verify prerequisites
 
 Run the bundled preflight check (or do the checks inline). The bundled resources
-referenced in this skill (`scripts/`, `references/`, `templates/`) live alongside
-this SKILL.md. When installed as a plugin, resolve them under
-`${CLAUDE_PLUGIN_ROOT}/skills/enable-agentic-shopping/` — e.g.
-`bash "${CLAUDE_PLUGIN_ROOT}/skills/enable-agentic-shopping/scripts/preflight.sh" <store-path>`.
-The preflight verifies:
+(`scripts/`, `references/`, `templates/`) live alongside this SKILL.md — resolve
+them relative to **this skill's own directory**, whatever agent loaded it (e.g.
+`<skill-dir>/scripts/preflight.sh <store-path>`). On Claude Code that directory is
+`${CLAUDE_PLUGIN_ROOT}/skills/enable-agentic-shopping/`; on other agents it is the
+skill folder under their skills directory (`~/.codex/skills/…`, `~/.cursor/skills/…`,
+etc.). The preflight verifies:
 
 - **Runtime + package manager** present.
 - **`mppx` and `stripe`** are installed or installable.

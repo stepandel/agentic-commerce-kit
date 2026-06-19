@@ -9,7 +9,7 @@
   "plugins": [
     {
       "name": "agentic-commerce",
-      "source": "./plugins/agentic-commerce",
+      "source": ".",
       "description": "Add agentic shopping (AI-agent checkout) to an existing store. Verifies Stripe prerequisites, wires up MPP checkout over Stripe Shared Payment Tokens and the agent discovery layer, and confirms the 402 payment flow.",
       "version": "0.1.0"
     }
