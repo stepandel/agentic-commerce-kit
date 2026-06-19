@@ -1,6 +1,6 @@
 ---
 name: enable-agentic-shopping
-description: Add agentic shopping (AI-agent checkout) to an existing store or website. Wires up MPP (Machine Payments Protocol) checkout over Stripe Shared Payment Tokens plus the agent discovery layer (llms.txt, agent-storefront manifest, OpenAPI). Use when the user wants agents/LLMs to be able to discover, price, pay for, and buy from their store. Verifies Stripe prerequisites, installs code, and confirms the 402 payment flow works.
+description: Add agentic shopping (AI-agent checkout) to an existing store or website. Wires up MPP (Machine Payments Protocol) checkout over Stripe Shared Payment Tokens plus the agent discovery layer (llms.txt, agent-storefront manifest, OpenAPI). Use when the user wants agents/LLMs to be able to discover, price, pay for, and buy from their store. Verifies Stripe prerequisites, installs code, and confirms the 402 payment flow works. Scope: stores where an agent can pay and be fulfilled immediately with NO user authentication or human-in-the-loop — not login-gated or manually-fulfilled checkouts.
 argument-hint: [path-to-target-store]
 ---
 
@@ -22,6 +22,30 @@ Deno, Express, etc.). For a non-JS store, use that language's official MPP SDK
 following the identical protocol — see `references/sdks-and-languages.md`. One sharp
 edge: **the Go SDK does not support Stripe yet**, so a Go store is a hard fork
 (Step 3).
+
+## Scope & limitations — state these to the user up front
+
+This skill only fits stores where an agent can **pay and receive fulfillment in one
+shot**, with no human in the loop. Before doing any work, tell the user plainly what
+is and isn't in scope so they can confirm their store qualifies:
+
+- **No user authentication.** The purchase path must not require a logged-in user,
+  an account, a session cookie, or any identity beyond the payment itself. The agent
+  arrives unauthenticated, pays with a Shared Payment Token, and that is the whole
+  authorization. Stores that gate checkout behind login/signup, OAuth, an API key
+  tied to a human account, KYC, or age/eligibility verification are **out of scope**.
+- **Immediate, automated fulfillment.** Fulfillment must complete programmatically
+  the moment payment settles — grant access, issue a license/token, create the order,
+  call an existing fulfillment service. Anything needing manual review, human
+  approval, a back-office step, or a "we'll email you later" delay is out of scope.
+- **Self-contained purchase.** No cart hand-off to a browser, no human-entered
+  shipping/billing forms, no post-purchase human-in-the-loop. The agent gets the
+  product right away.
+
+If the store needs any of the above, say so and stop — this skill won't make that
+store agent-shoppable as-is. The user may still choose to add an unauthenticated,
+auto-fulfilled agent lane *alongside* their authenticated human checkout; if so,
+treat that lane as the target and continue.
 
 ## What gets added to the store
 
@@ -68,7 +92,13 @@ see progress.
    - Find where HTTP routes/handlers are defined and how env/secrets are loaded.
    - Find the existing product catalog and any existing (human) checkout, so the
      agent endpoints can reuse pricing and coexist with browser checkout.
-3. Summarize findings to the user in 3–5 lines before changing anything.
+   - **Check the scope gates** (see "Scope & limitations"): does buying require login/
+     an account/session, and does fulfillment happen automatically on payment or does
+     it need a human/manual step? Note what you find.
+3. Summarize findings to the user in 3–5 lines before changing anything — and
+   explicitly confirm the store fits the scope (no auth gate on purchase, automated
+   immediate fulfillment). If it doesn't, flag it now and decide with the user whether
+   to add a separate unauthenticated agent lane or stop.
 4. If the repo has uncommitted changes or no VCS, say so; offer to proceed anyway.
 
 ### Step 2 — Verify prerequisites
@@ -185,6 +215,10 @@ Tell the user:
 - The security guardrails already enforced (live-key requirement, order-digest
   replay binding, idempotency, never logging tokens) and any follow-ups (durable
   order store, rate limiting).
+- **The scope this lane covers**: agents buy unauthenticated and are fulfilled
+  automatically on payment. It does not add login, accounts, manual fulfillment, or
+  human-in-the-loop steps — if the business later needs those for agent purchases,
+  that's a separate design.
 
 ## Bundled resources
 
