@@ -81,8 +81,11 @@ them relative to **this skill's own directory**, whatever agent loaded it (e.g.
 skill folder under their skills directory (`~/.codex/skills/…`, `~/.cursor/skills/…`,
 etc.). The preflight verifies:
 
-- **Runtime + package manager** present.
-- **`mppx` and `stripe`** are installed or installable.
+- **Language, runtime + package manager** (it detects JS/TS, Python, Go, Rust, or
+  Ruby and checks the matching toolchain).
+- **The matching MPP SDK** is installed or installable (`mppx`, `pympp`, `mpp` crate,
+  `mpp-rb`, or `mpp-go`) plus `stripe` where applicable. For a Go store it flags the
+  Stripe hard fork.
 - **Stripe live secret key** is available (`STRIPE_SECRET_KEY=sk_live_…`). Test keys
   (`sk_test_…`) are flagged: production agentic checkout requires live credentials.
 - **Stripe profile id** for SPT (`STRIPE_PROFILE_ID=profile_…`, NOT `profile_test_…`).
