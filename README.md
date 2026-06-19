@@ -85,7 +85,7 @@ agentic-commerce-kit/
   and confirms the `402` payment flow works — pausing for the user at every
   store-specific fork. Works against any store language — MPP is HTTP-native with
   official SDKs in TypeScript, Python, Rust, Go, and Ruby (bundled templates are
-  TypeScript; other languages use their SDK). Stripe-SPT-only for now.
+  TypeScript; other languages use their SDK). Stripe-SPT-only.
 
 ## Local development
 

@@ -10,7 +10,7 @@ Turn an existing store into one that AI agents can shop: discover products, get 
 quote, pay with a Stripe Shared Payment Token over the Machine Payments Protocol
 (MPP), and receive fulfillment — all without a human browser checkout.
 
-This skill is **Stripe-SPT-only** for now, and works against any store regardless of
+This skill is **Stripe-SPT-only**, and works against any store regardless of
 language. MPP is an HTTP-native protocol (`402` + `WWW-Authenticate: Payment` /
 `Authorization: Payment` / `Payment-Receipt`) with official SDKs in **TypeScript,
 Python, Rust, Go, and Ruby**, so the same flow can be implemented in any of them — or
