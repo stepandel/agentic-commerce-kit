@@ -73,19 +73,21 @@ see progress.
 
 ### Step 2 — Verify prerequisites
 
-Run the bundled preflight check (or do the checks inline). The bundled resources
-(`scripts/`, `references/`, `templates/`) live alongside this SKILL.md — resolve
-them relative to **this skill's own directory**, whatever agent loaded it (e.g.
-`<skill-dir>/scripts/preflight.sh <store-path>`). On Claude Code that directory is
+Check each prerequisite directly — read the store's manifest/env files and run the
+checks inline. (The bundled `references/` and `templates/` resolve relative to this
+skill's own directory: on Claude Code that's
 `${CLAUDE_PLUGIN_ROOT}/skills/enable-agentic-shopping/`; on other agents it is the
-skill folder under their skills directory (`~/.codex/skills/…`, `~/.cursor/skills/…`,
-etc.). The preflight verifies:
+skill folder under their skills directory, e.g. `~/.codex/skills/…`.)
 
-- **Language, runtime + package manager** (it detects JS/TS, Python, Go, Rust, or
-  Ruby and checks the matching toolchain).
-- **The matching MPP SDK** is installed or installable (`mppx`, `pympp`, `mpp` crate,
-  `mpp-rb`, or `mpp-go`) plus `stripe` where applicable. For a Go store it flags the
-  Stripe hard fork.
+Verify:
+
+- **Language, runtime + package manager** — detect the store language from its
+  manifest (`package.json`→JS/TS, `pyproject.toml`/`requirements.txt`→Python,
+  `go.mod`→Go, `Cargo.toml`→Rust, `Gemfile`→Ruby) and confirm the matching toolchain
+  is installed.
+- **The matching MPP SDK** is installed or installable — `mppx` (JS/TS), `pympp`
+  (Python), `mpp` crate (Rust), `mpp-rb` (Ruby), or `mpp-go` (Go) — plus a `stripe`
+  SDK where applicable. **Go has no Stripe method yet → flag the hard fork (Step 3).**
 - **Stripe live secret key** is available (`STRIPE_SECRET_KEY=sk_live_…`). Test keys
   (`sk_test_…`) are flagged: production agentic checkout requires live credentials.
 - **Stripe profile id** for SPT (`STRIPE_PROFILE_ID=profile_…`, NOT `profile_test_…`).
@@ -197,4 +199,3 @@ Tell the user:
 - `references/framework-adapters.md` — JS/TS adapters (Next.js / Hono / Bun / Deno /
   Express / Fastify). For other languages, use the SDK's framework middleware.
 - `templates/` — the TS code copied into JS/TS stores (see Step 4).
-- `scripts/preflight.sh` — prerequisite checks; safe to run read-only.

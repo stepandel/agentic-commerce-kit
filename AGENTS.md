@@ -6,9 +6,9 @@ Guidance for any AI coding agent working in this repository.
 
 `agentic-commerce-kit` is a collection of **host-agnostic skills** for adding
 agentic shopping (AI-agent checkout) to stores. Skills live in `skills/<name>/` as
-`SKILL.md` folders with bundled `references/`, `templates/`, and `scripts/`. They are
-plain markdown + code with no agent-specific dependencies, so any agent that can read
-a skill folder can use them.
+`SKILL.md` folders with bundled `references/` and `templates/`. They are plain
+markdown + code with no agent-specific dependencies, so any agent that can read a
+skill folder can use them.
 
 ## Using a skill here
 

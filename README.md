@@ -57,9 +57,8 @@ agentic-commerce-kit/
 ├── skills/
 │   └── enable-agentic-shopping/   # the skill (host-agnostic)
 │       ├── SKILL.md
-│       ├── references/            # MPP/SPT protocol, Stripe prerequisites, adapters
-│       ├── templates/             # the code copied into the store
-│       └── scripts/               # preflight prerequisite check
+│       ├── references/            # MPP/SPT protocol, SDKs, Stripe prereqs, adapters
+│       └── templates/             # the code copied into the store
 ├── .claude-plugin/                # Claude Code plugin + marketplace manifests
 └── docs/ADDING_A_HOST.md
 ```
